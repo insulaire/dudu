@@ -1,0 +1,5 @@
+Server:
+    Host: "0.0.0.0"
+    Port: 6666
+    ServerName: "dudu"
+    Version: "v0.01"
