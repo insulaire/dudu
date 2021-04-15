@@ -1,13 +1,18 @@
 package main
 
 import (
+	"dudu/internal/handler"
 	"dudu/pkg/socket"
 	"dudu/utils"
 	"fmt"
 )
 
 func main() {
-	s := socket.NewServer()
+	cmd := socket.NewCommand()
+	cmd.Add("send", &handler.Send{})
+	cmd.Add("addroom", &handler.AddRoom{})
+	cmd.Add("quit", &handler.QuitRoom{})
+	s := socket.NewServer(socket.WithCancelContext(), socket.WithCommand(cmd))
 	printlog()
 	s.Serve()
 }

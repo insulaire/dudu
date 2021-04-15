@@ -16,7 +16,8 @@ type IServer interface {
 
 	AddRoom(string) IRoom
 	ExistRoom(string) (IRoom, bool)
-	//RemoveConnection(uint32)
+
+	GetHandler(string) IHandler
 }
 
 type Server struct {
@@ -29,20 +30,40 @@ type Server struct {
 	max, size uint32
 	ctx       context.Context
 	cancel    context.CancelFunc
+	Command   ICommand
 }
 
-func NewServer() IServer {
+type ServerOption func(*Server)
+
+func WithCommand(cmd ICommand) ServerOption {
+	return func(s *Server) {
+		s.Command = cmd
+	}
+}
+func WithCancelContext() ServerOption {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &Server{
+	return func(s *Server) {
+		s.ctx = ctx
+		s.cancel = cancel
+	}
+}
+
+func NewServer(opts ...ServerOption) IServer {
+	server := &Server{
 		Host:    utils.GlabalObject.Host,
 		Port:    utils.GlabalObject.Port,
 		Version: "tcp4",
 		Name:    utils.GlabalObject.Name,
 		msg:     make(chan IBag, 100),
-		ctx:     ctx,
-		cancel:  cancel,
+		ctx:     context.Background(),
+		Command: NewCommand(),
 		rooms:   sync.Map{},
 	}
+	for _, opt := range opts {
+		opt(server)
+	}
+	server.rooms = sync.Map{}
+	return server
 }
 
 func (s *Server) start() {
@@ -95,4 +116,8 @@ func (s *Server) ExistRoom(name string) (IRoom, bool) {
 		return room, ok
 	}
 	return nil, false
+}
+
+func (s *Server) GetHandler(key string) IHandler {
+	return s.Command.Get(key)
 }
