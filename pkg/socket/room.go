@@ -53,7 +53,6 @@ func (r *Room) Join(user entity.User, conn IConnection) error {
 	}
 	r.users.Store(user, conn)
 	atomic.AddUint32(&r.size, 1)
-	log.Printf("%p  %v\n", r, r)
 	msg := entity.NewMessage([]byte(fmt.Sprintf("welcome! %s", user.GetName())), entity.WithUser(user), entity.WithCommand("send"))
 	go r.BroadcastMsg(msg)
 	return nil
@@ -65,6 +64,7 @@ func (r *Room) Exit(user entity.User) {
 }
 
 func (r *Room) BroadcastMsg(msg entity.Message) {
+
 	r.chanMsg <- msg
 }
 
@@ -72,19 +72,18 @@ func (r *Room) Broadcast() {
 	for {
 		select {
 		case msg := <-r.chanMsg:
-			log.Printf("%p  %v\n", r, r)
 			r.users.Range(func(key, value interface{}) bool {
 				log.Println("recv  :", key, string(msg.GetBody()))
 				u, _ := key.(entity.User)
 				conn, _ := value.(IConnection)
 				go func(u entity.User, conn IConnection) {
 					uu := msg.GetMessageUser()
-					//if u.GetId() != uu.GetId() {
-					if err := conn.Writer(NewBag(msg)); err != nil {
-						log.Println("broadcast send error:", err)
+					if u.GetId() != uu.GetId() {
+						if err := conn.Writer(NewBag(msg)); err != nil {
+							log.Println("broadcast send error:", err)
+						}
+						log.Println("broadcast send succ:", uu.GetId(), ":", msg.GetMessageId())
 					}
-					log.Println("broadcast send succ:", uu.GetId(), ":", msg.GetMessageId())
-					//}
 				}(u, conn)
 
 				return true

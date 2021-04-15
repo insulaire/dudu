@@ -99,7 +99,8 @@ func (c *Connection) Command(msg entity.Message) error {
 }
 
 func (c *Connection) Send(msg entity.Message) {
-	c.room.BroadcastMsg(msg)
+	newMsg := entity.NewMessage(append([]byte(fmt.Sprintf("%s:", msg.User.Name)), msg.Body...), entity.WithUser(msg.User))
+	c.room.BroadcastMsg(newMsg)
 }
 
 func (c *Connection) Writer(bag IBag) error {
