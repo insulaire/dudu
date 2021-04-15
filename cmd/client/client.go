@@ -46,6 +46,7 @@ func main() {
 		}
 
 	}
+	//ch := <-signal.Stop()
 	//w(entity.NewMessage(user, "send", []byte("bcd")), conn)
 	//select {}
 }

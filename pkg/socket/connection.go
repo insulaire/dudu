@@ -64,7 +64,9 @@ func (c *Connection) Start() {
 				fmt.Println(err)
 				return
 			}
-			c.Command(msg)
+			if err := c.Command(msg); err != nil {
+				c.Writer(NewBag(entity.NewMessage(entity.User{}, "send", []byte(err.Error()))))
+			}
 		}
 	}
 }
@@ -81,9 +83,12 @@ func (c *Connection) Command(msg entity.IMessage) error {
 	case "quit":
 		c.room.Exit(msg.GetMessageUser())
 		c.room = nil
-		break
+		return errors.New("quit succ")
 	case "send":
 		log.Println("send :", string(msg.GetBody()))
+		if c.room == nil {
+			return errors.New("not in room")
+		}
 		c.Send(msg)
 		break
 	default:
