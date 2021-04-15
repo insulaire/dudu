@@ -30,16 +30,19 @@ func main() {
 			if len(str) == 0 {
 				continue
 			}
-			w(entity.NewMessage(user, "send", []byte(str)), conn)
+			msg := entity.NewMessage([]byte(str), entity.WithUser(user), entity.WithCommand("send"))
+			w(msg, conn)
 			break
 		case "addroom":
 			if len(str) == 0 {
 				continue
 			}
-			w(entity.NewMessage(user, "addroom", []byte(str)), conn)
+			msg := entity.NewMessage([]byte(str), entity.WithUser(user), entity.WithCommand("addroom"))
+			w(msg, conn)
 			break
 		case "quit":
-			w(entity.NewMessage(user, "quit", []byte(str)), conn)
+			msg := entity.NewMessage([]byte(str), entity.WithUser(user), entity.WithCommand("quit"))
+			w(msg, conn)
 			break
 		default:
 			log.Println("ERROR:command notfound")
@@ -50,7 +53,7 @@ func main() {
 	//w(entity.NewMessage(user, "send", []byte("bcd")), conn)
 	//select {}
 }
-func w(msg entity.IMessage, conn net.Conn) {
+func w(msg entity.Message, conn net.Conn) {
 	pk := socket.NewPack()
 	buf, err := pk.Pack(socket.NewBag(msg))
 	if err != nil {

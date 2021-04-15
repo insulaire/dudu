@@ -11,7 +11,7 @@ type IPack interface {
 	Pack(IBag) ([]byte, error)
 	UnPack([]byte) (IBag, error)
 	GetHeaderLength() uint32
-	UnPackMessage(buf []byte) (entity.IMessage, error)
+	UnPackMessage(buf []byte) (entity.Message, error)
 }
 
 type Pack struct {
@@ -54,12 +54,12 @@ func (p *Pack) UnPack(buf []byte) (IBag, error) {
 	return msg, nil
 }
 
-func (p *Pack) UnPackMessage(buf []byte) (entity.IMessage, error) {
+func (p *Pack) UnPackMessage(buf []byte) (entity.Message, error) {
 	//reader := bytes.NewReader(buf)
 	msg := entity.Message{}
 	json.Unmarshal(buf, &msg)
 	// if err := binary.Read(reader, binary.LittleEndian, &msg); err != nil {
 	// 	return nil, err
 	// }
-	return &msg, nil
+	return msg, nil
 }

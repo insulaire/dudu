@@ -14,7 +14,7 @@ type IRoom interface {
 	//Strat()
 	Join(entity.User, IConnection) error
 	Exit(entity.User)
-	BroadcastMsg(entity.IMessage)
+	BroadcastMsg(entity.Message)
 }
 
 type Room struct {
@@ -25,7 +25,7 @@ type Room struct {
 	//当前房间所有链接
 	users sync.Map
 	//广播消息、上下线提醒
-	chanMsg chan entity.IMessage
+	chanMsg chan entity.Message
 	//
 	max, size uint32
 	//
@@ -37,7 +37,7 @@ func NewRoom(name string, server IServer, max uint32, ctx context.Context) IRoom
 		name:    name,
 		server:  server,
 		users:   sync.Map{},
-		chanMsg: make(chan entity.IMessage, 10000),
+		chanMsg: make(chan entity.Message, 10000),
 		max:     max,
 		ctx:     ctx,
 	}
@@ -54,7 +54,8 @@ func (r *Room) Join(user entity.User, conn IConnection) error {
 	r.users.Store(user, conn)
 	atomic.AddUint32(&r.size, 1)
 	log.Printf("%p  %v\n", r, r)
-	go r.BroadcastMsg(entity.NewMessage(user, "send", []byte(fmt.Sprintf("welcome! %s", user.GetName()))))
+	msg := entity.NewMessage([]byte(fmt.Sprintf("welcome! %s", user.GetName())), entity.WithUser(user), entity.WithCommand("send"))
+	go r.BroadcastMsg(msg)
 	return nil
 }
 
@@ -63,7 +64,7 @@ func (r *Room) Exit(user entity.User) {
 	atomic.AddUint32(&r.size, ^-1)
 }
 
-func (r *Room) BroadcastMsg(msg entity.IMessage) {
+func (r *Room) BroadcastMsg(msg entity.Message) {
 	r.chanMsg <- msg
 }
 

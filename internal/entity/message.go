@@ -4,13 +4,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type IMessage interface {
-	GetMessageId() uint32
-	GetMessageUser() User
-	GetCommand() string
-	GetBody() []byte
-}
-
 type Message struct {
 	Len     uint32
 	User    User
@@ -19,14 +12,50 @@ type Message struct {
 	Command string
 }
 
-func NewMessage(user User, command string, body []byte) IMessage {
-	return &Message{
-		Len:     uint32(len(body)),
-		MsgId:   uuid.New().ID(),
-		Body:    body,
-		User:    user,
-		Command: command,
+var defaultMessageOptions = Message{
+	MsgId:   uuid.New().ID(),
+	User:    User{},
+	Command: "send",
+}
+
+type MessageOption func(*Message)
+
+func WithUser(user User) MessageOption {
+	return func(msg *Message) {
+		msg.User = user
 	}
+}
+
+func WithCommand(command string) MessageOption {
+	return func(msg *Message) {
+		msg.Command = command
+	}
+}
+
+func WithMsgId(msg_id uint32) MessageOption {
+	return func(msg *Message) {
+		msg.MsgId = msg_id
+	}
+}
+
+// func NewMessage(user User, command string, body []byte) IMessage {
+// 	return &Message{
+// 		Len:     uint32(len(body)),
+// 		MsgId:   uuid.New().ID(),
+// 		Body:    body,
+// 		User:    user,
+// 		Command: command,
+// 	}
+// }
+
+func NewMessage(body []byte, opts ...MessageOption) Message {
+	msg := defaultMessageOptions
+	for _, v := range opts {
+		v(&msg)
+	}
+	msg.Body = body
+	msg.Len = uint32(len(body))
+	return msg
 }
 
 func (msg *Message) GetMessageId() uint32 {

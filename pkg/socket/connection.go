@@ -27,7 +27,7 @@ type Connection struct {
 	// //处理消息
 	handlerFunc IMessageHandler
 
-	Reader chan entity.IMessage
+	Reader chan entity.Message
 }
 
 func NewConnection(Server IServer, conn *net.TCPConn) IConnection {
@@ -65,13 +65,14 @@ func (c *Connection) Start() {
 				return
 			}
 			if err := c.Command(msg); err != nil {
-				c.Writer(NewBag(entity.NewMessage(entity.User{}, "send", []byte(err.Error()))))
+				msg := entity.NewMessage([]byte(err.Error()))
+				c.Writer(NewBag(msg))
 			}
 		}
 	}
 }
 
-func (c *Connection) Command(msg entity.IMessage) error {
+func (c *Connection) Command(msg entity.Message) error {
 	switch msg.GetCommand() {
 	case "addroom":
 		if room, ok := c.server.ExistRoom(string(msg.GetBody())); ok {
@@ -97,7 +98,7 @@ func (c *Connection) Command(msg entity.IMessage) error {
 	return nil
 }
 
-func (c *Connection) Send(msg entity.IMessage) {
+func (c *Connection) Send(msg entity.Message) {
 	c.room.BroadcastMsg(msg)
 }
 
