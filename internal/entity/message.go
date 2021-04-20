@@ -38,16 +38,6 @@ func WithMsgId(msg_id uint32) MessageOption {
 	}
 }
 
-// func NewMessage(user User, command string, body []byte) IMessage {
-// 	return &Message{
-// 		Len:     uint32(len(body)),
-// 		MsgId:   uuid.New().ID(),
-// 		Body:    body,
-// 		User:    user,
-// 		Command: command,
-// 	}
-// }
-
 func NewMessage(body []byte, opts ...MessageOption) Message {
 	msg := defaultMessageOptions
 	for _, v := range opts {
