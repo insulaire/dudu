@@ -53,7 +53,7 @@ func (r *Room) Join(user entity.User, conn IConnection) error {
 	}
 	r.users.Store(user, conn)
 	atomic.AddUint32(&r.size, 1)
-	msg := entity.NewMessage([]byte(fmt.Sprintf("welcome! %s", user.GetName())), entity.WithUser(user), entity.WithCommand("send"))
+	msg := entity.NewMessage([]byte(fmt.Sprintf("welcome! %s", user.Name)), entity.WithUser(user), entity.WithCommand("send"))
 	go r.BroadcastMsg(msg)
 	return nil
 }
@@ -78,11 +78,11 @@ func (r *Room) Broadcast() {
 				conn, _ := value.(IConnection)
 				go func(u entity.User, conn IConnection) {
 					uu := msg.GetMessageUser()
-					if u.GetId() != uu.GetId() {
+					if u.Id != uu.Id {
 						if err := conn.Writer(NewBag(msg)); err != nil {
 							log.Println("broadcast send error:", err)
 						}
-						log.Println("broadcast send succ:", uu.GetId(), ":", msg.GetMessageId())
+						log.Println("broadcast send succ:", uu.Id, ":", msg.GetMessageId())
 					}
 				}(u, conn)
 

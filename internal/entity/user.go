@@ -13,11 +13,3 @@ func NewUser(name string) User {
 		Name: name,
 	}
 }
-
-func (u *User) GetName() string {
-	return u.Name
-}
-
-func (u *User) GetId() uint32 {
-	return u.Id
-}
