@@ -60,7 +60,7 @@ func (r *Room) Join(user entity.User, conn IConnection) error {
 
 func (r *Room) Exit(user entity.User) {
 	r.users.Delete(user)
-	atomic.AddUint32(&r.size, ^-1)
+	atomic.AddUint32(&r.size, ^uint32(1-1))
 }
 
 func (r *Room) BroadcastMsg(msg entity.Message) {

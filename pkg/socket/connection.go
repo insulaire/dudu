@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 )
 
 type IConnection interface {
@@ -27,6 +28,10 @@ type Connection struct {
 	room IRoom
 
 	Reader chan entity.Message
+
+	//Writer chan entity.Message
+
+	closed chan struct{}
 }
 
 func NewConnection(Server IServer, conn *net.TCPConn) IConnection {
@@ -37,6 +42,7 @@ func NewConnection(Server IServer, conn *net.TCPConn) IConnection {
 }
 
 func (c *Connection) Start() {
+	defer c.QuitRoom(nil)
 	pack := NewPack()
 	for {
 		bufHead := make([]byte, pack.GetHeaderLength())
@@ -76,38 +82,26 @@ func (c *Connection) Start() {
 	}
 }
 
-func (c *Connection) DoCommand(msg *entity.Message, handle IHandler) error {
-	handle.Before(msg)
-	handle.Handle(c, msg)
-	handle.After(msg)
-	return nil
+func Reader(c *Connection) {
+	ticker := time.NewTicker(time.Minute)
+	for {
+		select {
+		case <-ticker.C:
+			//c.QuitRoom(nil)
+			return
+		case <-c.Reader:
+			ticker.Reset(time.Minute)
+		case <-c.closed:
+			return
+		}
+	}
 }
 
-// func (c *Connection) Command(msg entity.Message) error {
-// 	switch msg.GetCommand() {
-// 	case "addroom":
-// 		if room, ok := c.server.ExistRoom(string(msg.GetBody())); ok {
-// 			c.room = room
-// 		} else {
-// 			c.room = c.server.AddRoom(string(msg.GetBody()))
-// 		}
-// 		return c.room.Join(msg.GetMessageUser(), c)
-// 	case "quit":
-// 		c.room.Exit(msg.GetMessageUser())
-// 		c.room = nil
-// 		return errors.New("quit succ")
-// 	case "send":
-// 		log.Println("send :", string(msg.GetBody()))
-// 		if c.room == nil {
-// 			return errors.New("not in room")
-// 		}
-// 		c.BroadcastSend(msg)
-// 		break
-// 	default:
-// 		return errors.New("command not found")
-// 	}
-// 	return nil
-// }
+func (c *Connection) DoCommand(msg *entity.Message, handle IHandler) error {
+	defer handle.After(msg)
+	handle.Before(msg)
+	return handle.Handle(c, msg)
+}
 
 func (c *Connection) BroadcastSend(msg entity.Message) {
 	newMsg := entity.NewMessage(append([]byte(fmt.Sprintf("%s:", msg.User.Name)), msg.Body...), entity.WithUser(msg.User))
@@ -136,12 +130,17 @@ func (c *Connection) Send(msg *entity.Message) error {
 }
 
 func (c *Connection) AddRoom(msg *entity.Message) error {
-	if room, ok := c.server.ExistRoom(string(msg.GetBody())); ok {
-		c.room = room
+	var room IRoom
+	if r, ok := c.server.ExistRoom(string(msg.GetBody())); ok {
+		room = r
 	} else {
-		c.room = c.server.AddRoom(string(msg.GetBody()))
+		room = c.server.AddRoom(string(msg.GetBody()))
 	}
-	return c.room.Join(msg.GetMessageUser(), c)
+	if err := room.Join(msg.GetMessageUser(), c); err != nil {
+		return err
+	}
+	c.room = room
+	return nil
 }
 
 func (c *Connection) QuitRoom(msg *entity.Message) error {

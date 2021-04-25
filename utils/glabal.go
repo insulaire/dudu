@@ -30,6 +30,9 @@ type glabalObject struct {
 	Host    string
 	Port    int
 	Version string
+
+	MaxConntionSize uint32
+	MaxRoomSize     uint32
 }
 
 func init() {

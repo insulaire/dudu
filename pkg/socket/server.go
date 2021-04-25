@@ -30,14 +30,15 @@ type Server struct {
 	max, size uint32
 	ctx       context.Context
 	cancel    context.CancelFunc
-	Command   ICommand
+	command   ICommand
+	users     sync.Map
 }
 
 type ServerOption func(*Server)
 
 func WithCommand(cmd ICommand) ServerOption {
 	return func(s *Server) {
-		s.Command = cmd
+		s.command = cmd
 	}
 }
 func WithCancelContext() ServerOption {
@@ -56,13 +57,13 @@ func NewServer(opts ...ServerOption) IServer {
 		Name:    utils.GlabalObject.Name,
 		msg:     make(chan IBag, 100),
 		ctx:     context.Background(),
-		Command: NewCommand(),
+		command: NewCommand(),
 		rooms:   sync.Map{},
+		users:   sync.Map{},
 	}
 	for _, opt := range opts {
 		opt(server)
 	}
-	server.rooms = sync.Map{}
 	return server
 }
 
@@ -105,7 +106,7 @@ func (s *Server) RemoveConnection(uint32) {
 }
 
 func (s *Server) AddRoom(name string) IRoom {
-	room := NewRoom(name, s, 100, s.ctx)
+	room := NewRoom(name, s, 2, s.ctx)
 	s.rooms.Store(name, room)
 	return room
 }
@@ -119,5 +120,5 @@ func (s *Server) ExistRoom(name string) (IRoom, bool) {
 }
 
 func (s *Server) GetHandler(key string) IHandler {
-	return s.Command.Get(key)
+	return s.command.Get(key)
 }
